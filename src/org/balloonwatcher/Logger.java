@@ -27,6 +27,7 @@ public class Logger {
   Timer mTimer;
   File mLogFile;
   FileWriter mLogWriter;
+  boolean mStopped;
   BroadcastReceiver mSMSSentReceiver;
 
   int mLogInterval;
@@ -47,6 +48,7 @@ public class Logger {
     mActivity = activity;
     mWatcher = watcher;
     mTimer = new Timer();
+    mStopped = true;
 
     mLogInterval = -1;
     mEnableSMS = false;
@@ -55,6 +57,7 @@ public class Logger {
   }
 
   public void start() {
+    mStopped = false;
     Log.i(TAG, "Logger started");
 
     if(mLogInterval < 0 || mSMSInterval < 0) {
@@ -63,16 +66,12 @@ public class Logger {
     }
 
     mTimer.scheduleAtFixedRate(new TimerTask() {
-      public void run() {
-        log();
-      }
+      public void run() { log(); }
     }, mLogInterval * 1000, mLogInterval * 1000);
 
     if(mEnableSMS) {
       mTimer.scheduleAtFixedRate(new TimerTask() {
-        public void run() {
-          sms();
-        }
+        public void run() { sms(); }
       }, mSMSInterval * 1000, mSMSInterval * 1000);
     }
 
@@ -89,6 +88,7 @@ public class Logger {
   }
 
   public void stop() {
+    mStopped = true;
     logNote("logger stopped");
 
     mTimer.cancel();
@@ -96,7 +96,7 @@ public class Logger {
     if(mLogWriter != null) {
       try {
         mLogWriter.close();
-      } catch(IOException e) {
+      } catch(Exception e) {
         mLogWriter = null;
       }
     }
@@ -105,7 +105,17 @@ public class Logger {
   }
 
   public void tryOpenLogWriter() {
-    if(mLogWriter == null) {
+    try {
+      if(mStopped) {
+        Log.w(TAG, "tryOpenLogWriter() called, but logger is stopped. Ignore!");
+        return;
+      }
+
+      if(mLogWriter != null) {
+        Log.w(TAG, "tryOpenLogWriter() called, but mLogWriter isn't null; ignored");
+        return;
+      }
+
       Log.i(TAG, "Trying to open log writer");
 
       String storageState = Environment.getExternalStorageState();
@@ -119,8 +129,8 @@ public class Logger {
       } else {
         Log.e(TAG, "External storage is not mounted, but " + storageState);
       }
-    } else {
-      Log.w(TAG, "tryOpenLogWriter() called, but mLogWriter isn't null; ignored");
+    } catch(Exception e) {
+      Log.wtf(TAG, e);
     }
   }
 
@@ -197,23 +207,28 @@ public class Logger {
   }
 
   public void sms() {
-    if(mEnableSMS) {
-      SmsManager sms = SmsManager.getDefault();
-      String body = shortLog();
-      ArrayList<String> messages = sms.divideMessage(body);
+    try {
+      if(mEnableSMS) {
+        SmsManager sms = SmsManager.getDefault();
+        String body = shortLog();
+        ArrayList<String> messages = sms.divideMessage(body);
 
-      if(messages.size() > 1) {
-        Log.w(TAG, "SMS was divided to more parts, sending just the first one");
-        Log.w(TAG, "  The first part: " + messages.get(0));
-        Log.w(TAG, "  The whole SMS: " + body);
+        if(messages.size() > 1) {
+          Log.w(TAG, "SMS was divided to more parts, sending just the first one");
+          Log.w(TAG, "  The first part: " + messages.get(0));
+          Log.w(TAG, "  The whole SMS: " + body);
+          mActivity.showError("Log SMS had to be divided: " + body + "; sent only " + messages.get(0));
+        }
+
+        Log.i(TAG, "Sending SMS to " + mSMSRecipient + ": " + messages.get(0));
+        logNote("sending SMS: " + messages.get(0));
+        sms.sendTextMessage(
+          mSMSRecipient, null, messages.get(0),
+          PendingIntent.getBroadcast(mActivity, 0, new Intent(ACTION_SMS_SENT), 0),
+          null);
       }
-
-      Log.i(TAG, "Sending SMS to " + mSMSRecipient + ": " + messages.get(0));
-      logNote("sending SMS: " + messages.get(0));
-      sms.sendTextMessage(
-        mSMSRecipient, null, messages.get(0),
-        PendingIntent.getBroadcast(mActivity, 0, new Intent(ACTION_SMS_SENT), 0),
-        null);
+    } catch(Exception e) {
+      Log.wtf(TAG, e);
     }
   }
 
@@ -259,10 +274,13 @@ public class Logger {
       tryOpenLogWriter();
     }
 
+    boolean success = false;
+
     try {
       if(mLogWriter != null) {
         mLogWriter.write(msg + "\n");
         mLogWriter.flush();
+        success = true;
       } else {
         Log.w(TAG, "writeLog(): log writer not opened, tried to log: " + msg);
       }
@@ -273,6 +291,10 @@ public class Logger {
         try { mLogWriter.close(); } catch(IOException f) {}
       }
       mLogWriter = null;
+    }
+
+    if(!success) {
+      mActivity.showError("Unable to write log: " + msg);
     }
   }
 }
