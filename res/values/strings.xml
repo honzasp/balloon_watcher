@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Balloon watcher</string>
+  <string name="settings_label">Settings</string>
+  <string name="watching_label">Watching</string>
+
+  <string name="pref_log_interval">Log interval</string>
+  <string name="pref_log_interval_summary">Interval in seconds between logs to the log file</string>
+  <string name="pref_log_interval_default">60</string>
+
+  <string name="pref_send_sms">Send SMS?</string>
+  <string name="pref_send_sms_summary">SMS messages with logs?</string>
+  <string name="pref_send_sms_default">true</string>
+
+  <string name="pref_sms_interval">SMS interval</string>
+  <string name="pref_sms_interval_summary">Interval in seconds between SMS messages</string>
+  <string name="pref_sms_interval_default">300</string>
+
+  <string name="pref_sms_recipient">SMS recipient</string>
+  <string name="pref_sms_recipient_summary">Phone number to which send SMS messages</string>
+  <string name="pref_sms_recipient_default"></string>
+
+  <string name="pref_take_photos">Take photos?</string>
+  <string name="pref_take_photos_summary">Take photos during watching?</string>
+  <string name="pref_take_photos_default">true</string>
+
+  <string name="pref_photo_interval">Photo interval</string>
+  <string name="pref_photo_interval_summary">Interval in seconds between photos messages</string>
+  <string name="pref_photo_interval_default">60</string>
+
+  <string name="pref_capture_video">Capture video?</string>
+  <string name="pref_capture_video_summary">Capture video during watching?</string>
+  <string name="pref_capture_video_default">false</string>
+
+  <string name="pref_video_interval">Video interval</string>
+  <string name="pref_video_interval_summary">Interval in seconds between videos</string>
+  <string name="pref_video_interval_default">300</string>
+
+  <string name="pref_video_length">Video length</string>
+  <string name="pref_video_length_summary">Length of captured videos in seconds</string>
+  <string name="pref_video_length_default">10</string>
+
+  <string name="start_button">Start</string>
+  <string name="settings_button">Settings</string>
+
+  <string name="location_label">Location:</string>
+  <string name="battery_label">Battery:</string>
+  <string name="signal_label">Signal:</string>
+</resources>

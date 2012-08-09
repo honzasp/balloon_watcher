@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <EditTextPreference
+      android:key="log_interval"
+      android:title="@string/pref_log_interval"
+      android:inputType="number"
+      android:summary="@string/pref_log_interval_summary"
+      android:defaultValue="@string/pref_log_interval_default" />
+
+  <CheckBoxPreference
+      android:key="send_sms"
+      android:title="@string/pref_send_sms"
+      android:summary="@string/pref_send_sms_summary"
+      android:defaultValue="@string/pref_send_sms_default" />
+
+  <EditTextPreference
+      android:key="sms_interval"
+      android:dependency="send_sms"
+      android:inputType="number"
+      android:title="@string/pref_sms_interval"
+      android:summary="@string/pref_sms_interval_summary"
+      android:defaultValue="@string/pref_sms_interval_default" />
+
+  <EditTextPreference
+      android:key="sms_recipient"
+      android:dependency="send_sms"
+      android:inputType="phone"
+      android:title="@string/pref_sms_recipient"
+      android:summary="@string/pref_sms_recipient_summary"
+      android:defaultValue="@string/pref_sms_recipient_default" />
+
+  <CheckBoxPreference
+      android:key="take_photos"
+      android:title="@string/pref_take_photos"
+      android:summary="@string/pref_take_photos_summary"
+      android:defaultValue="@string/pref_take_photos_default" />
+
+  <EditTextPreference
+      android:key="photo_interval"
+      android:dependency="take_photos"
+      android:inputType="number"
+      android:title="@string/pref_photo_interval"
+      android:summary="@string/pref_photo_interval_summary"
+      android:defaultValue="@string/pref_photo_interval_default" />
+
+  <CheckBoxPreference
+      android:key="capture_video"
+      android:title="@string/pref_capture_video"
+      android:summary="@string/pref_capture_video_summary"
+      android:defaultValue="@string/pref_capture_video_default" />
+
+  <EditTextPreference
+      android:key="video_interval"
+      android:dependency="capture_video"
+      android:inputType="number"
+      android:title="@string/pref_video_interval"
+      android:summary="@string/pref_video_interval_summary"
+      android:defaultValue="@string/pref_video_interval_default" />
+
+  <EditTextPreference
+      android:key="video_length"
+      android:dependency="capture_video"
+      android:inputType="number"
+      android:title="@string/pref_video_length"
+      android:summary="@string/pref_video_length_summary"
+      android:defaultValue="@string/pref_video_length_default" />
+
+</PreferenceScreen>
