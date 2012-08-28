@@ -17,14 +17,11 @@ public class WatchingActivity extends Activity {
   TextView mBatteryText;
   TextView mSignalText;
   TextView mErrorText;
-  FrameLayout mPreviewFrame;
 
   Watcher mWatcher;
   Logger mLogger;
   Cameraman mCameraman;
 
-  CameraPreview mPreview;
-  Camera mCamera;
   SharedPreferences mPreferences;
 
   public static final String TAG = "WatchingActivity";
@@ -38,7 +35,6 @@ public class WatchingActivity extends Activity {
     mSignalText = (TextView) findViewById(R.id.signal_text);
     mErrorText = (TextView) findViewById(R.id.error_text);
 
-    mPreviewFrame = (FrameLayout) findViewById(R.id.camera_preview);
     mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
     mWatcher = new Watcher(this);
@@ -50,17 +46,18 @@ public class WatchingActivity extends Activity {
     mLogger.setSMSRecipient(mPreferences.getString("sms_recipient", ""));
 
     mCameraman = new Cameraman(this, mLogger, mWatcher);
+    /*
     mCameraman.setEnablePhotos(mPreferences.getBoolean("take_photos", false));
     mCameraman.setPhotoInterval(Integer.valueOf(mPreferences.getString("photo_interval", "")));
-    mCameraman.setEnableVideo(mPreferences.getBoolean("take_photos", false));
+    mCameraman.setEnableVideo(mPreferences.getBoolean("capture_video", false));
     mCameraman.setVideoInterval(Integer.valueOf(mPreferences.getString("video_interval", "")));
     mCameraman.setVideoLength(Integer.valueOf(mPreferences.getString("video_length", "")));
+    */
 
     mLogger.start();
     mWatcher.start();
     mCameraman.start();
 
-    prepareCamera();
   }
 
   public void onDestroy() {
@@ -69,8 +66,6 @@ public class WatchingActivity extends Activity {
     mCameraman.stop();
     mWatcher.stop();
     mLogger.stop();
-
-    mCamera.release();
   }
 
   public void locationChanged() {
@@ -100,26 +95,4 @@ public class WatchingActivity extends Activity {
       Log.wtf(TAG, e);
     }
   }
-
-  private void prepareCamera() {
-    try {
-      mCamera = Camera.open(); 
-    } catch(Exception e) {
-      Log.e(TAG, "Error opening camera", e); 
-      showError("Unable to open camera");
-    }
-
-    mCameraman.setCamera(mCamera);
-    preparePreview();
-  }
-
-  public void preparePreview() {
-    if(mCamera != null) {
-      mPreview = new CameraPreview(this, mCamera);
-      mPreviewFrame.removeAllViews();
-      mPreviewFrame.addView(mPreview);
-    }
-  }
-
-
 }
