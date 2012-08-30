@@ -56,7 +56,7 @@ public class Watcher {
 
     mBatteryReceiver = new BroadcastReceiver() {
       public void onReceive(Context context, Intent intent) {
-        //changeBatteryState(intent);
+        changeBatteryState(intent);
       }
     };
 
@@ -90,4 +90,80 @@ public class Watcher {
   public SignalStrength getSignalStrength() {
     return mSignalStrength;
   }
+
+  private void changeBatteryState(Intent state) {
+    mBatteryState = state;
+    mActivity.batteryStateChanged();
+  }
+
+  public boolean hasBatteryState() {
+    return mBatteryState != null;
+  }
+
+  public double batteryLevel() {
+    if(mBatteryState != null) {
+      final int level = mBatteryState.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+      final int scale = mBatteryState.getIntExtra(BatteryManager.EXTRA_SCALE, 1);
+      return (double) level / scale;
+    } else {
+      return -1.0;
+    }
+  }
+
+  public String batteryHealth() {
+    if(mBatteryState != null) {
+      switch(mBatteryState.getIntExtra(BatteryManager.EXTRA_HEALTH, -99)) {
+        case BatteryManager.BATTERY_HEALTH_DEAD: 
+          return "dead";
+        case BatteryManager.BATTERY_HEALTH_GOOD:
+          return "good";
+        case BatteryManager.BATTERY_HEALTH_OVERHEAT:
+          return "overheat";
+        case BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
+          return "overvoltage";
+        case BatteryManager.BATTERY_HEALTH_UNKNOWN:
+          return "unknown";
+        case BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+          return "unspecified failure";
+        default:
+          Log.w(TAG, "Unknown battery health value");
+          return "?!";
+      }
+    } else {
+      return "?";
+    }
+  }
+
+  public String batteryHealthShort() {
+    if(mBatteryState != null) {
+      switch(mBatteryState.getIntExtra(BatteryManager.EXTRA_HEALTH, -99)) {
+        case BatteryManager.BATTERY_HEALTH_DEAD: 
+          return "d";
+        case BatteryManager.BATTERY_HEALTH_GOOD:
+          return "g";
+        case BatteryManager.BATTERY_HEALTH_OVERHEAT:
+          return "h";
+        case BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
+          return "v";
+        case BatteryManager.BATTERY_HEALTH_UNKNOWN:
+          return "u";
+        case BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+          return "f";
+        default:
+          Log.w(TAG, "Unknown battery health value");
+          return "!";
+      }
+    } else {
+      return "?";
+    }
+  }
+
+  public int batteryTemperature() {
+    if(mBatteryState != null) {
+      return mBatteryState.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -99);
+    } else {
+      return -99;
+    }
+  }
+
 }

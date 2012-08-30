@@ -1,15 +1,20 @@
 package org.balloonwatcher;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import android.view.SurfaceView;
+import android.view.SurfaceHolder;
 import android.content.pm.PackageManager;
 import android.content.Context;
 import android.content.Intent;
@@ -25,18 +30,15 @@ import android.media.CamcorderProfile;
 
 class Cameraman {
 
-  public Cameraman(WatchingActivity activity, Logger logger, Watcher watcher) { }
-  public void start() { }
-  public void stop() { }
-
-  /*
   WatchingActivity mActivity;
   Logger mLogger;
   Watcher mWatcher;
-  Timer mTimer;
 
-  BroadcastReceiver mTakePhotoReceiver;
-  BroadcastReceiver mCaptureVideoReceiver;
+  Semaphore mCameraSemaphore;
+  ScheduledThreadPoolExecutor mSTPE;
+  Camera mCamera;
+
+  SurfaceView mSurfaceView;
 
   boolean mEnablePhotos;
   int mPhotoInterval;
@@ -45,15 +47,14 @@ class Cameraman {
   int mVideoLength;
 
   public static final String TAG = "Cameraman";
-  public static final String ACTION_TAKE_PHOTO = "org.balloonwatcher.ACTION_TAKE_PHOTO";
-  public static final String ACTION_CAPTURE_VIDEO = "org.balloonwatcher.ACTION_CAPTURE_VIDEO";
+  public static final int STPE_POOL_SIZE = 5;
 
   public static final int     PHOTO_JPEG_QUALITY = 95;
   public static final int     PHOTO_PICTURE_FORMAT = ImageFormat.JPEG;
   public static final String  PHOTO_SCENE_MODE = Camera.Parameters.SCENE_MODE_SPORTS;
   public static final int     PHOTO_ZOOM = 0;
 
-  public static final int     VIDEO_QUALITY = CamcorderProfile.QUALITY_HIGH;
+  public static final int     VIDEO_QUALITY = CamcorderProfile.QUALITY_LOW;
 
   public void setEnablePhotos(boolean val) { mEnablePhotos = val; }
   public void setPhotoInterval(int val) { mPhotoInterval = val; }
@@ -61,145 +62,172 @@ class Cameraman {
   public void setVideoInterval(int val) { mVideoInterval = val; }
   public void setVideoLength(int val) { mVideoLength = val; }
 
-  public Cameraman(WatchingActivity activity, Logger logger, Watcher watcher) {
+  public Cameraman(WatchingActivity activity, Logger logger, Watcher watcher, SurfaceView sv) {
     mActivity = activity;
     mLogger = logger;
     mWatcher = watcher;
-    mTimer = new Timer();
+    mSurfaceView = sv;
+    mSTPE = new ScheduledThreadPoolExecutor(STPE_POOL_SIZE);
+
+    mCameraSemaphore = new Semaphore(1);
 
     mEnablePhotos = false;
     mPhotoInterval = -1;
     mEnableVideo = false;
     mVideoInterval = -1;
     mVideoLength = -1;
+
+    prepareCamera();
+
+    mSurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        restartPreview();
+      }
+
+      public void surfaceCreated(SurfaceHolder holder) {}
+      public void surfaceDestroyed(SurfaceHolder holder) {}
+    });
+  }
+
+  private void restartPreview() {
+    final SurfaceHolder holder = mSurfaceView.getHolder();
+
+    if(holder.getSurface() == null)
+      return;
+
+    if(mCamera == null)
+      return;
+    
+    try {
+      mCamera.stopPreview();
+    } catch(Exception e) { }
+
+    mCamera.setDisplayOrientation(90);
+
+    try {
+      mCamera.setPreviewDisplay(holder);
+      mCamera.startPreview();
+    } catch(Exception e) {
+      Log.e(TAG, "Error starting camera preview", e);
+      mActivity.showError("Error starting camera preview");
+    }
   }
 
   public void start() {
     Log.i(TAG, "Cameraman started");
 
-    mTakePhotoReceiver = new BroadcastReceiver() {
-      public void onReceive(Context context, Intent intent) {
-        photo();
-      }
-    };
-
-    mCaptureVideoReceiver = new BroadcastReceiver() {
-      public void onReceive(Context context, Intent intent) {
-        video();
-      }
-    };
-
-    mActivity.registerReceiver(mTakePhotoReceiver, new IntentFilter(ACTION_TAKE_PHOTO));
-    mActivity.registerReceiver(mCaptureVideoReceiver, new IntentFilter(ACTION_CAPTURE_VIDEO));
-
     if(mEnablePhotos) {
-      mTimer.scheduleAtFixedRate(new TimerTask() {
-        public void run() { 
-          mActivity.sendBroadcast(new Intent(ACTION_TAKE_PHOTO));
+      mSTPE.scheduleAtFixedRate(new Runnable() {
+        public void run() {
+          photo();
         }
-      }, mPhotoInterval * 1000, mPhotoInterval * 1000);
+      }, mPhotoInterval / 2, mPhotoInterval, TimeUnit.SECONDS);
     }
 
     if(mEnableVideo) {
-      mTimer.scheduleAtFixedRate(new TimerTask() {
-        public void run() { 
-          mActivity.sendBroadcast(new Intent(ACTION_CAPTURE_VIDEO));
+      mSTPE.scheduleAtFixedRate(new Runnable() {
+        public void run() {
+          video();
         }
-      }, mVideoInterval * 1000, mVideoInterval * 1000);
+      }, mVideoInterval / 2, mVideoInterval, TimeUnit.SECONDS);
     }
   }
 
   public void stop() {
+    if(mSTPE != null) mSTPE.shutdownNow();
+    if(mCamera != null) mCamera.release();
     Log.i(TAG, "Cameraman stopped");
-
-    mActivity.unregisterReceiver(mTakePhotoReceiver);
-    mActivity.unregisterReceiver(mCaptureVideoReceiver);
-    mTimer.cancel();
   }
 
-  public void photo() {
+  private void photo() {
     try {
-      final Camera camera = mActivity.getCamera();
+      if(mCamera == null) 
+        return;
 
-      if(camera == null) {
-        Log.w(TAG, "photo(): mActivity.getCamera() returned null, skip");
-      } else {
+      Log.i(TAG, "photo() acquiring camera...");
+      mCameraSemaphore.acquire();
+      Log.i(TAG, "photo() acquired camera");
 
-        try {
-          Log.i(TAG, "taking photo...");
-
-          Camera.Parameters params = camera.getParameters();
-          preparePhotoCamera(params);
-
-          try {
-            camera.setParameters(params);
-          } catch(Exception e) {
-            Log.e(TAG, "setting camera parameters failed", e);
+      try {
+        configurePhotoCamera(mCamera.getParameters());
+        mCamera.takePicture(null, null, new Camera.PictureCallback() {
+          public void onPictureTaken(byte[] data, Camera camera) {
+            restartPreview();
+            mCameraSemaphore.release();
+            savePicture(data);
           }
-
-          camera.takePicture(null, null, new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera cam) {
-              mActivity.returnCamera(camera);
-              savePicture(data); 
-            }
-          });
-        } catch(Exception e) {
-          mActivity.returnCamera(camera);
-          throw e;
-        }
+        });
+      } catch(Exception e) {
+        mCameraSemaphore.release();
+        throw e;
       }
     } catch(Exception e) {
       Log.wtf(TAG, e);
     }
   }
 
-  public void video() {
-    final Camera camera;
-    try {
-      camera = mActivity.getCamera();
-      if(camera == null) {
-        Log.w(TAG, "video(): mActivity.getCamera() returned null, skip");
-      } else {
-        try {
-          camera.unlock();
+  private void video() {
+    /*try {
+      if(mCamera == null) 
+        return;
 
-          final MediaRecorder recorder = new MediaRecorder();
-          recorder.setCamera(camera);
-          recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-          recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-          recorder.setProfile(CamcorderProfile.get(VIDEO_QUALITY));
-          recorder.setOutputFile(videoFile().toString());
-          recorder.setPreviewDisplay(mActivity.getPreview().getHolder().getSurface());
-          recorder.prepare();
+      Log.i(TAG, "video() acquiring camera...");
+      mCameraSemaphore.acquire();
+      Log.i(TAG, "video() acquired camera");
 
-          Log.i(TAG, "capturing video...");
-          recorder.start();
+      try {
+        mCamera.unlock();
+        final MediaRecorder recorder = new MediaRecorder();
+        recorder.setCamera(mCamera);
+        recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+        recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-          mTimer.schedule(new TimerTask() {
-            public void run() { stopVideo(camera, recorder); }
-          }, mVideoLength * 1000);
-        } catch(Exception e) {
-          mActivity.returnCamera(camera);
-          throw e;
-        }
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+        recorder.setVideoSize(640, 480);
+
+        recorder.setOutputFile(videoFile().toString());
+        recorder.setPreviewDisplay(mSurfaceView.getHolder().getSurface());
+        recorder.prepare();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+          public void run() {
+            Log.i(TAG, "stopping recorder");
+            recorder.stop();
+            recorder.release();
+            mCamera.lock();
+            restartPreview();
+            mCameraSemaphore.release();
+          }
+        }, mVideoLength * 1000);
+
+        Log.i(TAG, "starting recorder");
+        recorder.start();
+      } catch(Exception e) {
+        mCameraSemaphore.release();
+        mCamera.lock();
+        throw e;
       }
     } catch(Exception e) {
       Log.wtf(TAG, e);
-    }
+    }*/
   }
 
-  private void stopVideo(Camera camera, MediaRecorder recorder) {
+  private void prepareCamera() {
     try {
-      recorder.stop();
-      recorder.release();
-      camera.lock();
-      mActivity.returnCamera(camera);
+      if(!mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA))
+        return;
+
+      mCamera = Camera.open();
     } catch(Exception e) {
       Log.wtf(TAG, e);
     }
   }
 
-  private void preparePhotoCamera(Camera.Parameters params) {
+  private void configurePhotoCamera(Camera.Parameters params) {
     params.setJpegQuality(PHOTO_JPEG_QUALITY);
     params.setPictureFormat(PHOTO_PICTURE_FORMAT);
     params.setSceneMode(PHOTO_SCENE_MODE);
@@ -241,10 +269,11 @@ class Cameraman {
 
       OutputStream out = null;
       try {
-        out = new BufferedOutputStream(new FileOutputStream(file));
+        out = new BufferedOutputStream(new FileOutputStream(file), 8*1024);
         out.write(data);
       } catch(IOException e) {
         Log.e(TAG, "IO error writing picture", e);
+        mActivity.showError("IO error writing picture");
       } finally {
         if(out != null)
           out.close();
@@ -267,6 +296,4 @@ class Cameraman {
     String fileName = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
     return new File(root, fileName + suffix);
   }
-
-  */
 }

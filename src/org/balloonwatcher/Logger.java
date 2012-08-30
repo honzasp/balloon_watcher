@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.location.Location;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.ArrayList;
@@ -125,9 +126,11 @@ public class Logger {
           mLogWriter = new FileWriter(mLogFile, true);
         } catch(IOException e) {
           Log.e(TAG, "IO error opening log file", e);
+          mActivity.showError("IO error opening log file");
         }
       } else {
         Log.e(TAG, "External storage is not mounted, but " + storageState);
+        mActivity.showError("Unable to write logs, external storage is " + storageState);
       }
     } catch(Exception e) {
       Log.wtf(TAG, e);
@@ -147,28 +150,39 @@ public class Logger {
     sb.append(" ");
 
     if(loc != null) {
-      sb.append(String.format("Lt %.6f Ln %.6f", loc.getLatitude(), loc.getLongitude()));
+      sb.append(String.format(Locale.US, "Lat %.6f Lng %.6f", loc.getLatitude(), loc.getLongitude()));
 
       if(loc.hasAltitude()) 
-        sb.append(String.format(" Al %.2f", loc.getAltitude()));
+        sb.append(String.format(Locale.US, " Alt %.2f", loc.getAltitude()));
 
       if(loc.hasAccuracy()) 
-        sb.append(String.format(" Ac %.2f", loc.getAccuracy()));
+        sb.append(String.format(Locale.US, " Acc %.2f", loc.getAccuracy()));
 
       if(loc.hasBearing()) 
-        sb.append(String.format(" Br %.1f", loc.getBearing()));
+        sb.append(String.format(Locale.US, " Brg %.1f", loc.getBearing()));
 
       if(loc.hasSpeed()) 
-        sb.append(String.format(" Sp %.2f", loc.getSpeed()));
+        sb.append(String.format(Locale.US, " Spd %.2f", loc.getSpeed()));
     } else {
       sb.append("Location unknown");
     }
     sb.append(" ");
 
     if(ss != null) {
-      sb.append(String.format("GSM %d", ss.getGsmSignalStrength()));
+      sb.append(String.format(Locale.US, "GSM %d", ss.getGsmSignalStrength()));
     } else {
       sb.append("Signal unknown");
+    }
+    sb.append(" ");
+
+    if(mWatcher.hasBatteryState()) {
+      sb.append(String.format(Locale.US, "BtL %.2f BtH %s BtT %d",
+            mWatcher.batteryLevel(),
+            mWatcher.batteryHealth(),
+            mWatcher.batteryTemperature()
+          ));
+    } else {
+      sb.append("Battery unknown");
     }
     sb.append(" ");
 
@@ -178,32 +192,45 @@ public class Logger {
   public String shortLog() {
     StringBuilder sb = new StringBuilder();
     Location loc = mWatcher.getLocation();
+    SignalStrength ss = mWatcher.getSignalStrength();
     Date now = new Date();
 
     sb.append(new SimpleDateFormat("HH:mm").format(now));
 
     if(loc != null) {
-      sb.append(String.format("T%.6fG%.6f", loc.getLatitude(), loc.getLongitude()));
+      sb.append(String.format(Locale.US, "T%.6fG%.6f", loc.getLatitude(), loc.getLongitude()));
 
       if(loc.hasAltitude())
-        sb.append(String.format("A%.0f", loc.getAltitude()));
+        sb.append(String.format(Locale.US, "A%.0f", loc.getAltitude()));
 
       if(loc.hasAccuracy())
-        sb.append(String.format("C%.0f", loc.getAccuracy()));
+        sb.append(String.format(Locale.US, "C%.0f", loc.getAccuracy()));
 
       if(loc.hasSpeed())
-        sb.append(String.format("S%.0f", loc.getSpeed()));
+        sb.append(String.format(Locale.US, "S%.0f", loc.getSpeed()));
     } else {
       sb.append("Loc?");
+    }
+
+    if(ss != null) {
+      sb.append(String.format(Locale.US, "M%d", ss.getGsmSignalStrength()));
+    }
+
+    if(mWatcher.hasBatteryState()) {
+      sb.append(String.format(Locale.US, "B%.0f%s", mWatcher.batteryLevel()*100, mWatcher.batteryHealthShort()));
     }
 
     return sb.toString();
   }
 
   public void log() {
-    String text = longLog();
-    Log.i(TAG, "log(): " + text);
-    writeLog(text);
+    try {
+      String text = longLog();
+      Log.i(TAG, "log(): " + text);
+      writeLog(text);
+    } catch(Exception e) {
+      Log.wtf(TAG, e);
+    }
   }
 
   public void sms() {
@@ -261,6 +288,7 @@ public class Logger {
     } else {
       Log.e(TAG, "Error sending SMS: " + error);
       logNote("error sending SMS: " + error);
+      mActivity.showError("Unable to send SMS: " + error);
     }
   }
 
