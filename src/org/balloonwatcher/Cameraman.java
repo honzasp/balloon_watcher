@@ -142,8 +142,10 @@ class Cameraman {
 
   private void photo() {
     try {
-      if(mCamera == null) 
+      if(mCamera == null) {
+        Log.i(TAG, "photo(): mCamera is null");
         return;
+      }
 
       Log.i(TAG, "photo() acquiring camera...");
       mCameraSemaphore.acquire();
@@ -154,8 +156,8 @@ class Cameraman {
         mCamera.takePicture(null, null, new Camera.PictureCallback() {
           public void onPictureTaken(byte[] data, Camera camera) {
             restartPreview();
-            mCameraSemaphore.release();
             savePicture(data);
+            mCameraSemaphore.release();
           }
         });
       } catch(Exception e) {
@@ -169,8 +171,10 @@ class Cameraman {
 
   private void video() {
     /*try {
-      if(mCamera == null) 
+      if(mCamera == null) {
+        Log.i(TAG, "video(): mCamera is null");
         return;
+      }
 
       Log.i(TAG, "video() acquiring camera...");
       mCameraSemaphore.acquire();
