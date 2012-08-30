@@ -26,6 +26,7 @@ public class WatchingActivity extends Activity {
   Watcher mWatcher;
   Logger mLogger;
   Cameraman mCameraman;
+  Spokesperson mSpokesperson;
 
   BroadcastReceiver mErrorMsgReceiver;
 
@@ -56,9 +57,12 @@ public class WatchingActivity extends Activity {
 
     mWatcher = new Watcher(this);
 
-    mLogger = new Logger(this, mWatcher);
+    mSpokesperson = new Spokesperson(this, mWatcher);
+    mSpokesperson.setEnabled(mPreferences.getBoolean("enable_spokesperson", false));
+
+    mLogger = new Logger(this, mWatcher, mSpokesperson);
     mLogger.setLogInterval(Integer.valueOf(mPreferences.getString("log_interval", "")));
-    mLogger.setEnableSMS(mPreferences.getBoolean("send_sms", false));
+    mLogger.setEnableSMS(mSpokesperson.isEnabled() && mPreferences.getBoolean("send_sms", false));
     mLogger.setSMSInterval(Integer.valueOf(mPreferences.getString("sms_interval", "")));
     mLogger.setSMSRecipient(mPreferences.getString("sms_recipient", ""));
 
@@ -71,6 +75,7 @@ public class WatchingActivity extends Activity {
 
     mLogger.start();
     mWatcher.start();
+    mSpokesperson.start();
     mCameraman.start();
   }
 
@@ -80,6 +85,7 @@ public class WatchingActivity extends Activity {
     unregisterReceiver(mErrorMsgReceiver);
 
     mCameraman.stop();
+    mSpokesperson.stop();
     mWatcher.stop();
     mLogger.stop();
   }

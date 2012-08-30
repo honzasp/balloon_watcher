@@ -2,19 +2,13 @@ package org.balloonwatcher;
 
 import android.os.Environment;
 import android.util.Log;
-import android.telephony.SmsManager;
 import android.telephony.SignalStrength;
-import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.BroadcastReceiver;
 import android.location.Location;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.ArrayList;
 import java.util.Date;
 import java.lang.StringBuilder;
 import java.text.SimpleDateFormat;
@@ -25,11 +19,11 @@ import java.io.IOException;
 public class Logger {
   WatchingActivity mActivity;
   Watcher mWatcher;
+  Spokesperson mSpokesperson;
   Timer mTimer;
   File mLogFile;
   FileWriter mLogWriter;
   boolean mStopped;
-  BroadcastReceiver mSMSSentReceiver;
 
   int mLogInterval;
   boolean mEnableSMS;
@@ -37,7 +31,6 @@ public class Logger {
   String mSMSRecipient;
 
   public static final String TAG = "Logger";
-  public static final String ACTION_SMS_SENT = "org.balloonwatcher.SMS_SENT_ACTION";
   public static final String LOG_FILE_NAME = "watcher.log";
 
   public void setLogInterval(int val) { mLogInterval = val; }
@@ -45,9 +38,10 @@ public class Logger {
   public void setSMSInterval(int val) { mSMSInterval = val; }
   public void setSMSRecipient(String val) { mSMSRecipient = val; }
 
-  public Logger(WatchingActivity activity, Watcher watcher) {
+  public Logger(WatchingActivity activity, Watcher watcher, Spokesperson spokesperson) {
     mActivity = activity;
     mWatcher = watcher;
+    mSpokesperson = spokesperson;
     mTimer = new Timer();
     mStopped = true;
 
@@ -76,14 +70,6 @@ public class Logger {
       }, mSMSInterval * 1000, mSMSInterval * 1000);
     }
 
-    mSMSSentReceiver = new BroadcastReceiver() {
-      public void onReceive(Context context, Intent intent) {
-        smsSent(this);
-      }
-    };
-
-    mActivity.registerReceiver(mSMSSentReceiver, new IntentFilter(ACTION_SMS_SENT));
-
     tryOpenLogWriter();
     logNote("logger started");
   }
@@ -93,7 +79,6 @@ public class Logger {
     logNote("logger stopped");
 
     mTimer.cancel();
-    mActivity.unregisterReceiver(mSMSSentReceiver);
     if(mLogWriter != null) {
       try {
         mLogWriter.close();
@@ -234,62 +219,7 @@ public class Logger {
   }
 
   public void sms() {
-    try {
-      if(mEnableSMS) {
-        SmsManager sms = SmsManager.getDefault();
-        String body = shortLog();
-        ArrayList<String> messages = sms.divideMessage(body);
-
-        if(messages.size() > 1) {
-          Log.w(TAG, "SMS was divided to more parts, sending just the first one");
-          Log.w(TAG, "  The first part: " + messages.get(0));
-          Log.w(TAG, "  The whole SMS: " + body);
-          mActivity.showError("Log SMS had to be divided: " + body + "; sent only " + messages.get(0));
-        }
-
-        Log.i(TAG, "Sending SMS to " + mSMSRecipient + ": " + messages.get(0));
-        logNote("sending SMS: " + messages.get(0));
-        sms.sendTextMessage(
-          mSMSRecipient, null, messages.get(0),
-          PendingIntent.getBroadcast(mActivity, 0, new Intent(ACTION_SMS_SENT), 0),
-          null);
-      }
-    } catch(Exception e) {
-      Log.wtf(TAG, e);
-    }
-  }
-
-  public void smsSent(BroadcastReceiver receiver) {
-    String error = null;
-
-    switch(receiver.getResultCode()) {
-      case Activity.RESULT_OK:
-        break;
-      case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-        error = "Generic failure";
-        break;
-      case SmsManager.RESULT_ERROR_NO_SERVICE:
-        error = "No service";
-        break;
-      case SmsManager.RESULT_ERROR_NULL_PDU:
-        error = "Null PDU";
-        break;
-      case SmsManager.RESULT_ERROR_RADIO_OFF:
-        error = "Radio off";
-        break;
-      default:
-        error = "Unknown error";
-        break;
-    }
-
-    if(error == null) {
-      Log.i(TAG, "SMS was successfuly sent");
-      logNote("sms successfully sent");
-    } else {
-      Log.e(TAG, "Error sending SMS: " + error);
-      logNote("error sending SMS: " + error);
-      mActivity.showError("Unable to send SMS: " + error);
-    }
+    mSpokesperson.sendSMS(mSMSRecipient, shortLog());
   }
 
   public void logNote(String msg) {

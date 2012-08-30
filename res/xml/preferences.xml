@@ -8,7 +8,14 @@
       android:defaultValue="@string/pref_log_interval_default" />
 
   <CheckBoxPreference
+      android:key="enable_spokesperson"
+      android:title="@string/pref_enable_spokesperson"
+      android:summary="@string/pref_enable_spokesperson_summary"
+      android:defaultValue="@string/pref_enable_spokesperson_default" />
+
+  <CheckBoxPreference
       android:key="send_sms"
+      android:dependency="enable_spokesperson"
       android:title="@string/pref_send_sms"
       android:summary="@string/pref_send_sms_summary"
       android:defaultValue="@string/pref_send_sms_default" />
