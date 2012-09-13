@@ -6,51 +6,55 @@ Watch your balloon with balloon watcher! :)
 
 ### Long log
 
+Long logs are saved to the log file.
+
 #### Location
 
- * Lat <latitude>
- * Lng <longitude>
- * Alt <altitude> (*)
- * Acc <accuracy> (*)
- * Brg <bearing> (*)
- * Spd <speed> (*)
+ * `Lat <latitude>`
+ * `Lng <longitude>`
+ * `Alt <altitude>` (when known)
+ * `Acc <accuracy>` (when known)
+ * `Brg <bearing>` (when known)
+ * `Spd <speed>` (when known)
 
 #### Signal
 
- * GSM <gsm signal strength>
- * Signal unknown
+ * `GSM <gsm signal strength>`
+ * `Signal unknown`
 
 GSM signal strength is a number from 0 to 31 (the bigger the better).
 
 #### Battery
 
- * BtL <battery level>
- * BtH <battery health>
- * BtT <battery temperature>
- * Battery unknown
+ * `BtL <battery level>`
+ * `BtH <battery health>`
+ * `BtT <battery temperature>`
+ * `Battery unknown`
 
 ### Short log
 
+Short logs are send via SMS messages.
+
 #### Time
 
- * <hour>:<minute>
+ * `<hour>:<minute>`
 
 #### Location
 
- * T<latitude>
- * G<longitude>
- * A<altitude> (*)
- * C<accuracy> (*)
- * S<speed> (*)
- * Loc? (unknown location)
+ * `T<latitude>`
+ * `G<longitude>`
+ * `A<altitude>` (when known)
+ * `C<accuracy>` (when known)
+ * `S<speed>` (when known)
+ * `Loc?` (when the location is unknown)
 
 #### Signal
 
- * M<gsm signal>
+ * `M<gsm signal>`
 
 #### Battery
 
- * B<battery level><battery health>
+ * `B<battery level><battery health>`
 
 ## SMS instructions
 
