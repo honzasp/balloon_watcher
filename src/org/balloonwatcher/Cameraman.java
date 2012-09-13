@@ -42,6 +42,7 @@ class Cameraman {
 
   boolean mEnablePhotos;
   int mPhotoInterval;
+  String mSceneMode;
   boolean mEnableVideo;
   int mVideoInterval;
   int mVideoLength;
@@ -51,13 +52,13 @@ class Cameraman {
 
   public static final int     PHOTO_JPEG_QUALITY = 95;
   public static final int     PHOTO_PICTURE_FORMAT = ImageFormat.JPEG;
-  public static final String  PHOTO_SCENE_MODE = Camera.Parameters.SCENE_MODE_SPORTS;
   public static final int     PHOTO_ZOOM = 0;
 
   public static final int     VIDEO_QUALITY = CamcorderProfile.QUALITY_LOW;
 
   public void setEnablePhotos(boolean val) { mEnablePhotos = val; }
   public void setPhotoInterval(int val) { mPhotoInterval = val; }
+  public void setSceneMode(String val) { mSceneMode = val; }
   public void setEnableVideo(boolean val) { mEnableVideo = val; }
   public void setVideoInterval(int val) { mVideoInterval = val; }
   public void setVideoLength(int val) { mVideoLength = val; }
@@ -234,7 +235,7 @@ class Cameraman {
   private void configurePhotoCamera(Camera.Parameters params) {
     params.setJpegQuality(PHOTO_JPEG_QUALITY);
     params.setPictureFormat(PHOTO_PICTURE_FORMAT);
-    params.setSceneMode(PHOTO_SCENE_MODE);
+    params.setSceneMode(mSceneMode);
 
     if(params.getMaxZoom() < PHOTO_ZOOM) {
       Log.w(TAG, String.format("camera max zoom (%d) < PHOTO_ZOOM (%d)", params.getMaxZoom(), PHOTO_ZOOM));

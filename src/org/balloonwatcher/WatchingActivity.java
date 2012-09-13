@@ -69,6 +69,7 @@ public class WatchingActivity extends Activity {
     mCameraman = new Cameraman(this, mLogger, mWatcher, mCameraPreview);
     mCameraman.setEnablePhotos(mPreferences.getBoolean("take_photos", false));
     mCameraman.setPhotoInterval(Integer.valueOf(mPreferences.getString("photo_interval", "")));
+    mCameraman.setSceneMode(mPreferences.getString("scene_mode", "auto"));
     mCameraman.setEnableVideo(mPreferences.getBoolean("capture_video", false));
     mCameraman.setVideoInterval(Integer.valueOf(mPreferences.getString("video_interval", "")));
     mCameraman.setVideoLength(Integer.valueOf(mPreferences.getString("video_length", "")));

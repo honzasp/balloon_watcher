@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <array name="scene_mode_values">
+    <item>action</item>
+    <item>auto</item>
+    <item>barcode</item>
+    <item>beach</item>
+    <item>candlelight</item>
+    <item>fireworks</item>
+    <item>landscape</item>
+    <item>night</item>
+    <item>night-portrait</item>
+    <item>party</item>
+    <item>portrait</item>
+    <item>snow</item>
+    <item>sports</item>
+    <item>steadyphoto</item>
+    <item>sunset</item>
+    <item>theatre</item>
+  </array>
+
+  <array name="scene_mode_entries">
+    <item>Action</item>
+    <item>Auto</item>
+    <item>Barcode</item>
+    <item>Beach</item>
+    <item>Candle light</item>
+    <item>Fireworks</item>
+    <item>Landscape</item>
+    <item>Night</item>
+    <item>Night portrait</item>
+    <item>Party</item>
+    <item>Portrait</item>
+    <item>Snow</item>
+    <item>Sports</item>
+    <item>Steady photo</item>
+    <item>Sunset</item>
+    <item>Theatre</item>
+  </array>
+</resources>

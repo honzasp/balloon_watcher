@@ -32,6 +32,10 @@
   <string name="pref_photo_interval_summary">Interval in seconds between photos messages</string>
   <string name="pref_photo_interval_default">60</string>
 
+  <string name="pref_scene_mode">Scene mode</string>
+  <string name="pref_scene_mode_summary">Scene mode used when capturing photos</string>
+  <string name="pref_scene_mode_default">auto</string>
+
   <string name="pref_capture_video">Capture video?</string>
   <string name="pref_capture_video_summary">Capture video during watching?</string>
   <string name="pref_capture_video_default">false</string>

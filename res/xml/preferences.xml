@@ -50,6 +50,15 @@
       android:summary="@string/pref_photo_interval_summary"
       android:defaultValue="@string/pref_photo_interval_default" />
 
+  <ListPreference
+      android:key="scene_mode"
+      android:dependency="take_photos"
+      android:title="@string/pref_scene_mode"
+      android:summary="@string/pref_scene_mode_summary"
+      android:defaultValue="@string/pref_scene_mode_default"
+      android:entries="@array/scene_mode_entries"
+      android:entryValues="@array/scene_mode_values" />
+
   <CheckBoxPreference
       android:key="capture_video"
       android:title="@string/pref_capture_video"
