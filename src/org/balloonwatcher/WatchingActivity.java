@@ -27,6 +27,7 @@ public class WatchingActivity extends Activity {
   Logger mLogger;
   Cameraman mCameraman;
   Spokesperson mSpokesperson;
+  boolean mStarted;
 
   BroadcastReceiver mErrorMsgReceiver;
 
@@ -36,7 +37,17 @@ public class WatchingActivity extends Activity {
   public static final String ACTION_SHOW_ERROR = "org.balloonwatcher.ACTION_SHOW_ERROR";
 
   public void onCreate(Bundle savedInstanceState) {
+    mStarted = false;
     super.onCreate(savedInstanceState);
+    start();
+  }
+
+  public void start() {
+    if(mStarted) {
+      return;
+    }
+    mStarted = true;
+
     setContentView(R.layout.watching);
 
     mLocationText = (TextView) findViewById(R.id.location_text);
@@ -74,6 +85,9 @@ public class WatchingActivity extends Activity {
     mCameraman.setVideoInterval(Integer.valueOf(mPreferences.getString("video_interval", "")));
     mCameraman.setVideoLength(Integer.valueOf(mPreferences.getString("video_length", "")));
 
+    mSpokesperson.setLogger(mLogger);
+    mSpokesperson.setCameraman(mCameraman);
+
     mLogger.start();
     mWatcher.start();
     mSpokesperson.start();
@@ -82,6 +96,14 @@ public class WatchingActivity extends Activity {
 
   public void onDestroy() {
     super.onDestroy();
+    stop();
+  }
+
+  public void stop() {
+    if(!mStarted) {
+      return;
+    }
+    mStarted = false;
 
     unregisterReceiver(mErrorMsgReceiver);
 
@@ -89,6 +111,11 @@ public class WatchingActivity extends Activity {
     mSpokesperson.stop();
     mWatcher.stop();
     mLogger.stop();
+  }
+
+  public void restart() {
+    stop();
+    start();
   }
 
   public void locationChanged() {

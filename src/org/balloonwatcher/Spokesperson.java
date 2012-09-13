@@ -15,6 +15,8 @@ import android.os.Bundle;
 class Spokesperson {
   WatchingActivity mActivity;
   Watcher mWatcher;
+  Logger mLogger;
+  Cameraman mCameraman;
 
   BroadcastReceiver mSMSSentReceiver;
   BroadcastReceiver mSMSMessageReceiver;
@@ -26,6 +28,8 @@ class Spokesperson {
 
   public void setEnabled(boolean val) { mEnabled = val; }
   public boolean isEnabled() { return mEnabled; }
+  public void setLogger(Logger val) { mLogger = val; }
+  public void setCameraman(Cameraman val) { mCameraman = val; }
 
   public Spokesperson(WatchingActivity activity, Watcher watcher) {
     mActivity = activity;
@@ -68,8 +72,12 @@ class Spokesperson {
   }
 
   public void sendSMS(String recipient, String body) {
+    sendSMS(recipient, body, false);
+  }
+
+  public void sendSMS(String recipient, String body, boolean force) {
     try {
-      if(mEnabled) {
+      if(force || mEnabled) {
         SmsManager sms = SmsManager.getDefault();
         ArrayList<String> messages = sms.divideMessage(body);
 
@@ -86,7 +94,8 @@ class Spokesperson {
           PendingIntent.getBroadcast(mActivity, 0, new Intent(ACTION_SMS_SENT), 0),
           null);
       } else {
-        Log.w(TAG, "sendSMS('" + body + "') called, but spokesperson is disabled");
+        Log.w(TAG, "sendSMS('" + recipient + "', '" + body + "', " + force +")"
+            + " called, but spokesperson is disabled");
       }
     } catch(Exception e) {
       Log.wtf(TAG, e);
@@ -94,45 +103,53 @@ class Spokesperson {
   }
 
   private void smsSent(BroadcastReceiver receiver) {
-    String error = null;
+    try {
+      String error = null;
 
-    switch(receiver.getResultCode()) {
-      case Activity.RESULT_OK:
-        break;
-      case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-        error = "Generic failure";
-        break;
-      case SmsManager.RESULT_ERROR_NO_SERVICE:
-        error = "No service";
-        break;
-      case SmsManager.RESULT_ERROR_NULL_PDU:
-        error = "Null PDU";
-        break;
-      case SmsManager.RESULT_ERROR_RADIO_OFF:
-        error = "Radio off";
-        break;
-      default:
-        error = "Unknown error";
-        break;
-    }
+      switch(receiver.getResultCode()) {
+        case Activity.RESULT_OK:
+          break;
+        case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+          error = "Generic failure";
+          break;
+        case SmsManager.RESULT_ERROR_NO_SERVICE:
+          error = "No service";
+          break;
+        case SmsManager.RESULT_ERROR_NULL_PDU:
+          error = "Null PDU";
+          break;
+        case SmsManager.RESULT_ERROR_RADIO_OFF:
+          error = "Radio off";
+          break;
+        default:
+          error = "Unknown error";
+          break;
+      }
 
-    if(error == null) {
-      Log.i(TAG, "SMS was successfuly sent");
-    } else {
-      Log.e(TAG, "Error sending SMS: " + error);
-      mActivity.showError("Unable to send SMS: " + error);
+      if(error == null) {
+        Log.i(TAG, "SMS was successfuly sent");
+      } else {
+        Log.e(TAG, "Error sending SMS: " + error);
+        mActivity.showError("Unable to send SMS: " + error);
+      }
+    } catch(Exception e) {
+      Log.wtf(TAG, e);
     }
   }
 
   private void smsReceived(Intent intent) {
-    Bundle extras = intent.getExtras();
-    if(extras == null) 
-      return;
+    try {
+      Bundle extras = intent.getExtras();
+      if(extras == null) 
+        return;
 
-    Object[] pdus = (Object[]) extras.get("pdus");
+      Object[] pdus = (Object[]) extras.get("pdus");
 
-    for(int i = 0; i < pdus.length; ++i) {
-      processSMS(SmsMessage.createFromPdu((byte[]) pdus[i]));
+      for(int i = 0; i < pdus.length; ++i) {
+        processSMS(SmsMessage.createFromPdu((byte[]) pdus[i]));
+      }
+    } catch(Exception e) {
+      Log.wtf(TAG, e);
     }
   }
 
@@ -140,6 +157,27 @@ class Spokesperson {
     String from = msg.getDisplayOriginatingAddress();
     String body = msg.getDisplayMessageBody();
     Log.i(TAG, "received SMS from " + from + ": " + body);
+
+    String[] parts = body.split("\\s+");
+
+    if(parts[0].toLowerCase().equals("bw")) {
+      for(int i = 1; i < parts.length; ++i) {
+        final String part = parts[i];
+        final String lpart = part.toLowerCase();
+
+        if(lpart.equals("sendlog")) {
+          sendSMS(from, mLogger.shortLog(), true);
+        } else if(lpart.equals("restart")) {
+          mActivity.restart();
+        } else if(lpart.equals("photo")) {
+          mCameraman.photo();
+        } else {
+          Log.w(TAG, "Unknown SMS instruction '" + part + "'");
+        }
+      }
+    } else {
+      Log.i(TAG, "this SMS is ignored");
+    }
   }
 
 }

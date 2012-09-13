@@ -141,7 +141,7 @@ class Cameraman {
     Log.i(TAG, "Cameraman stopped");
   }
 
-  private void photo() {
+  public void photo() {
     try {
       if(mCamera == null) {
         Log.i(TAG, "photo(): mCamera is null");
@@ -170,7 +170,7 @@ class Cameraman {
     }
   }
 
-  private void video() {
+  public void video() {
     /*try {
       if(mCamera == null) {
         Log.i(TAG, "video(): mCamera is null");
