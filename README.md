@@ -64,3 +64,4 @@ instructions:
  * `sendlog` - immediatly reply with a short log
  * `restart` - restarts the watching
  * `photo` - take a photo
+ * `sound` - make a sound

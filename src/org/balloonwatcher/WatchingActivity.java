@@ -60,7 +60,11 @@ public class WatchingActivity extends Activity {
 
     mErrorMsgReceiver = new BroadcastReceiver() {
       public void onReceive(Context context, Intent intent) {
-        mErrorText.setText(intent.getStringExtra("message"));
+        try {
+          mErrorText.setText(intent.getStringExtra("message"));
+        } catch(Exception e) {
+          Log.wtf(TAG, e);
+        }
       }
     };
 
@@ -70,6 +74,7 @@ public class WatchingActivity extends Activity {
 
     mSpokesperson = new Spokesperson(this, mWatcher);
     mSpokesperson.setEnabled(mPreferences.getBoolean("enable_spokesperson", false));
+    mSpokesperson.setSoundLength(Integer.valueOf(mPreferences.getString("sound_length", "")));
 
     mLogger = new Logger(this, mWatcher, mSpokesperson);
     mLogger.setLogInterval(Integer.valueOf(mPreferences.getString("log_interval", "")));

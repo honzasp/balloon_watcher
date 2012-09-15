@@ -1,6 +1,9 @@
 package org.balloonwatcher;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+import android.media.MediaPlayer;
 import android.util.Log;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
@@ -18,16 +21,21 @@ class Spokesperson {
   Logger mLogger;
   Cameraman mCameraman;
 
+  Timer mSoundTimer;
+  MediaPlayer mSoundPlayer;
+
   BroadcastReceiver mSMSSentReceiver;
   BroadcastReceiver mSMSMessageReceiver;
 
   boolean mEnabled;
+  int mSoundLength;
 
   public static final String TAG = "Spokesperson";
   public static final String ACTION_SMS_SENT = "org.balloonwatcher.SMS_SENT_ACTION";
 
   public void setEnabled(boolean val) { mEnabled = val; }
   public boolean isEnabled() { return mEnabled; }
+  public void setSoundLength(int val) { mSoundLength = val; }
   public void setLogger(Logger val) { mLogger = val; }
   public void setCameraman(Cameraman val) { mCameraman = val; }
 
@@ -40,6 +48,9 @@ class Spokesperson {
 
   public void start() {
     if(mEnabled) {
+      mSoundTimer = new Timer();
+      mSoundPlayer = MediaPlayer.create(mActivity, R.raw.alert);
+
       mSMSSentReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
           smsSent(this);
@@ -63,6 +74,8 @@ class Spokesperson {
 
   public void stop() {
     if(mEnabled) {
+      mSoundTimer.cancel();
+      mSoundPlayer.stop();
       mActivity.unregisterReceiver(mSMSSentReceiver);
       mActivity.unregisterReceiver(mSMSMessageReceiver);
       Log.i(TAG, "Spokesperson stopped");
@@ -171,6 +184,8 @@ class Spokesperson {
           mActivity.restart();
         } else if(lpart.equals("photo")) {
           mCameraman.photo();
+        } else if(lpart.equals("sound")) {
+          sound();
         } else {
           Log.w(TAG, "Unknown SMS instruction '" + part + "'");
         }
@@ -178,6 +193,25 @@ class Spokesperson {
     } else {
       Log.i(TAG, "this SMS is ignored");
     }
+  }
+
+  public void sound() {
+    Log.i(TAG, "starting sound");
+    mSoundPlayer.setLooping(true);
+    mSoundPlayer.setVolume(1.0f, 1.0f);
+    mSoundPlayer.start();
+
+    mSoundTimer.schedule(new TimerTask() {
+      public void run() {
+        try {
+          Log.i(TAG, "stopping sound");
+          mSoundPlayer.stop();
+          mSoundPlayer.prepare();
+        } catch(Exception e) {
+          Log.wtf(TAG, e);
+        }
+      }
+    }, 1000 * mSoundLength);
   }
 
 }

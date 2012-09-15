@@ -36,6 +36,14 @@
       android:summary="@string/pref_sms_recipient_summary"
       android:defaultValue="@string/pref_sms_recipient_default" />
 
+  <EditTextPreference
+      android:key="sound_length"
+      android:dependency="enable_spokesperson"
+      android:inputType="number"
+      android:title="@string/pref_sound_length"
+      android:summary="@string/pref_sound_length_summary"
+      android:defaultValue="@string/pref_sound_length_default" />
+
   <CheckBoxPreference
       android:key="take_photos"
       android:title="@string/pref_take_photos"

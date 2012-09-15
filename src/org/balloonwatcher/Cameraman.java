@@ -79,39 +79,28 @@ class Cameraman {
     mVideoLength = -1;
 
     prepareCamera();
-
-    mSurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        restartPreview();
-      }
-
-      public void surfaceCreated(SurfaceHolder holder) {}
-      public void surfaceDestroyed(SurfaceHolder holder) {}
-    });
   }
 
   private void restartPreview() {
-    final SurfaceHolder holder = mSurfaceView.getHolder();
-
-    if(holder.getSurface() == null)
-      return;
-
-    if(mCamera == null)
-      return;
-    
     try {
-      mCamera.stopPreview();
-    } catch(Exception e) { }
+      final SurfaceHolder holder = mSurfaceView.getHolder();
 
-    mCamera.setDisplayOrientation(90);
+      if(holder.getSurface() == null)
+        return;
 
-    try {
+      if(mCamera == null)
+        return;
+      
+      try {
+        mCamera.stopPreview();
+      } catch(Exception e) { }
+
+      mCamera.setDisplayOrientation(90);
       mCamera.setPreviewDisplay(holder);
       mCamera.startPreview();
     } catch(Exception e) {
-      Log.e(TAG, "Error starting camera preview", e);
-      mActivity.showError("Error starting camera preview");
+      Log.e(TAG, "Error restarting camera preview", e);
+      mActivity.showError("Error restarting camera preview");
     }
   }
 
@@ -227,6 +216,20 @@ class Cameraman {
         return;
 
       mCamera = Camera.open();
+
+      if(mSurfaceView.getHolder() != null) {
+        mSurfaceView.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+          public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            restartPreview();
+          }
+
+          public void surfaceCreated(SurfaceHolder holder) {}
+          public void surfaceDestroyed(SurfaceHolder holder) {}
+        });
+      } else {
+        Log.e(TAG, "mSurfaceView().getHolder() returned null!");
+      }
     } catch(Exception e) {
       Log.wtf(TAG, e);
     }

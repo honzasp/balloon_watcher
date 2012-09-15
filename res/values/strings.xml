@@ -24,6 +24,10 @@
   <string name="pref_sms_recipient_summary">Phone number to which send SMS messages</string>
   <string name="pref_sms_recipient_default"></string>
 
+  <string name="pref_sound_length">Sound length</string>
+  <string name="pref_sound_length_summary">Length of the sound played when requested by SMS in seconds</string>
+  <string name="pref_sound_length_default">120</string>
+
   <string name="pref_take_photos">Take photos?</string>
   <string name="pref_take_photos_summary">Take photos during watching?</string>
   <string name="pref_take_photos_default">true</string>
